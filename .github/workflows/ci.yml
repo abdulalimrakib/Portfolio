@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      # Format-valid placeholders only — no live database is needed. Prisma-
+      # and DB-touching route handlers are dynamic (see next.config.ts /
+      # app/api), so `next build` never actually connects; it just needs
+      # server/env.ts's Zod checks to pass.
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci_db"
+      BETTER_AUTH_SECRET: "ci-only-secret-do-not-use-in-production-00"
+      BETTER_AUTH_URL: "http://localhost:3000"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

@@ -1,0 +1,10 @@
+allowBuilds:
+  "@prisma/engines": true
+  prisma: true
+  unrs-resolver: true
+
+# GHSA-ggr8-5vv4-36mx: deepmerge-ts <8.0.0 (pulled in transitively by
+# @prisma/config, used only by the Prisma CLI, not at app runtime) has a
+# stack-exhaustion DoS on deeply recursive merges. Force the patched version.
+overrides:
+  deepmerge-ts: ">=8.0.0"

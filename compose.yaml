@@ -1,0 +1,47 @@
+# Local development infrastructure only. Next.js runs directly on the host
+# (via `pnpm dev`) for fast hot reload — only PostgreSQL is containerized.
+#
+# Credentials come from .env.local (gitignored). Copy .env.example to
+# .env.local before running this, and always pass --env-file explicitly
+# (Compose only auto-loads a plain `.env`, which this project doesn't use):
+#
+#   docker compose --env-file .env.local up -d
+#   docker compose --env-file .env.local ps
+#   docker compose --env-file .env.local logs -f
+#   docker compose --env-file .env.local down       # keeps the data volume
+#   docker compose --env-file .env.local down -v    # DELETES the data volume
+#                                                    # (destroys local dev
+#                                                    # data — only run this
+#                                                    # on purpose)
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: my-app-postgres
+    restart: unless-stopped
+    environment:
+      # Only the three vars Postgres needs are passed through — not the
+      # whole .env.local (which also holds unrelated app secrets).
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required, see .env.example}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required, see .env.example}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required, see .env.example}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - my-app-network
+
+volumes:
+  postgres_data:
+    name: my-app_postgres_data
+
+networks:
+  my-app-network:
+    name: my-app-network
