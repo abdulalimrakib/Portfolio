@@ -2,7 +2,9 @@ import { test, expect } from "@playwright/test";
 
 test("home page loads", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /edit the/i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /I build AI systems/i, level: 1 }),
+  ).toBeVisible();
 });
 
 test("health endpoint reports a connected database", async ({ request }) => {

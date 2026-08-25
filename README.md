@@ -1,9 +1,17 @@
 # my-app
 
-A production-oriented full-stack foundation built on Next.js (App Router),
-TypeScript, PostgreSQL, and Prisma — ready to grow into a SaaS app,
-dashboard, e-commerce site, or any CRUD/API-driven product with
-authentication.
+Abdul Alim Rakib's personal portfolio (`app/page.tsx`) — an AI/ML engineer
+and CSE graduate's research, projects, experience, and contact info — built
+on a production-oriented Next.js (App Router) foundation with TypeScript,
+PostgreSQL, and Prisma, so the same project can grow into a SaaS app,
+dashboard, or any other CRUD/API-driven product with authentication.
+
+Portfolio content is data-driven: everything shown on the page lives in
+[`data/*.ts`](./data) (`profile.ts`, `skills.ts`, `research.ts`,
+`projects.ts`, `experience.ts`, `education.ts`, `honors.ts`), separate from
+the presentational components in [`components/`](./components). Update the
+data files to change what the site says; the components render whatever is
+there.
 
 ## Stack
 
@@ -142,9 +150,24 @@ for a minimal example.
 
 ```
 app/                    Routes, layouts, and Route Handlers (App Router)
+  page.tsx               The portfolio home page
+  layout.tsx              Root layout + SEO metadata
+  icon.tsx                 Generated favicon (next/og)
+  robots.ts, sitemap.ts     Generated from server/env.ts's BETTER_AUTH_URL
   api/
     auth/[...all]/       Better Auth's catch-all handler
     health/               DB connectivity check
+components/             Presentational React components for the portfolio
+                        (Navbar, Hero, section components, cards, etc.)
+data/                   Portfolio content, separate from presentation —
+                        edit these to change what the site says
+  profile.ts             Identity, contact links, hero/about copy
+  skills.ts               Grouped technical skills
+  research.ts             Research & academic projects
+  projects.ts             Software engineering projects
+  experience.ts            Teaching/mentorship experience
+  education.ts             Degrees
+  honors.ts                Awards & scholarships
 server/                 Server-only modules (never import these from a
                         Client Component — server/env.ts, db.ts, and auth.ts
                         all import the `server-only` package to enforce this
@@ -158,12 +181,12 @@ prisma/
 tests/
   unit/                   Vitest + React Testing Library
   e2e/                    Playwright
-public/                 Static assets
+public/                 Static assets, including the downloadable resume PDF
+                        and profile photo
 ```
 
-`components/` and `lib/` aren't created yet — add them when there's real
-content for them (shared UI components, and shared client+server utilities
-respectively).
+`lib/` isn't created yet — add it when there's real content for it (shared
+client+server utilities).
 
 ## Development commands
 

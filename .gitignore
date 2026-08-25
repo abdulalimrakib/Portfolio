@@ -42,6 +42,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# source material for the portfolio content (resume/CV PDFs contain a phone
+# number and a third party's contact details — never commit these; the
+# extracted, reviewed content lives in data/*.ts and public/ instead)
+/demo/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
+/*
+ * A deliberately dark, fixed palette (not a light/dark toggle) — this is a
+ * single-brand portfolio, not an app with user-facing theme preferences.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --surface: #141414;
+  --border: #262626;
+  --foreground: #ededed;
+  --muted: #a1a1aa;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-muted);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Respect reduced-motion preferences: kill smooth scrolling and shrink
+   every animation/transition to effectively instant rather than disabling
+   them outright (some, like the mobile menu, still need to *complete*). */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer utilities {
+  /* Translucent, blurred nav background over page content. */
+  .glass-nav {
+    background: rgba(10, 10, 10, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Faint grid backdrop used once, behind the hero. */
+  .bg-grid {
+    background-size: 40px 40px;
+    background-image:
+      linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0.025) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.025) 1px,
+        transparent 1px
+      );
+  }
+
+  /* Single soft spotlight, used once, behind the hero. */
+  .glow-bg {
+    background: radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 55%
+    );
+  }
+
+  /* Shared hover lift for cards. */
+  .card-hover {
+    transition:
+      transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 40px -12px rgba(255, 255, 255, 0.08);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card-hover:hover {
+      transform: none;
+    }
+  }
 }
