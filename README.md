@@ -36,29 +36,97 @@ there.
 - **Docker + Docker Compose** — for running PostgreSQL locally. Next.js
   itself runs directly on the host (not in Docker) for fast hot reload.
 
+## Setting up on a new machine (Windows / macOS / Linux)
+
+Install the three prerequisites for your OS, then follow **Getting started**
+below — from that point on, the commands are identical on every OS.
+
+<details>
+<summary><strong>Windows</strong></summary>
+
+Use **WSL2** (Windows Subsystem for Linux) — Docker Desktop integrates with
+it directly, and every command in this README (including the Bash-style
+`docker compose --env-file ...` invocations) works unmodified inside it.
+Native Windows (PowerShell/cmd) is possible but not the supported path here.
+
+1. Install WSL2 + a Ubuntu distro: open PowerShell **as Administrator** and
+   run `wsl --install`, then reboot when prompted.
+2. Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+   and, in its Settings → Resources → WSL Integration, enable your Ubuntu
+   distro.
+3. Open the Ubuntu app (search "Ubuntu" in the Start menu) — this is your
+   terminal for everything below.
+4. Install Node.js 24 inside WSL — either via
+   [nvm](https://github.com/nvm-sh/nvm) (`nvm install 24`) or your distro's
+   package manager.
+5. Install git (`sudo apt install git`) and clone the repo inside the WSL
+   filesystem (e.g. `~/projects/`, **not** `/mnt/c/...`) — builds are
+   dramatically faster and file-watching (hot reload) is unreliable across
+   the Windows/Linux filesystem boundary.
+6. Continue with **Getting started** below, inside the WSL terminal.
+
+</details>
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+1. Install [Homebrew](https://brew.sh) if you don't have it.
+2. `brew install node@24 git` (Xcode Command Line Tools, which provide git,
+   may already be installed — `xcode-select --install` if not).
+3. Install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
+   (or [Colima](https://github.com/abiosoft/colima) as a lighter alternative:
+   `brew install colima docker docker-compose && colima start`).
+4. Continue with **Getting started** below.
+
+</details>
+
+<details>
+<summary><strong>Linux</strong></summary>
+
+1. Install Node.js 24 — via your distro's package manager, or
+   [nvm](https://github.com/nvm-sh/nvm) (`nvm install 24`) for more control
+   over the exact version.
+2. Install [Docker Engine + the Compose plugin](https://docs.docker.com/engine/install/)
+   for your distro, then add yourself to the `docker` group so you don't
+   need `sudo` for every command: `sudo usermod -aG docker $USER` (log out
+   and back in for it to take effect).
+3. Continue with **Getting started** below.
+
+</details>
+
 ## Getting started
 
 ```bash
-# 1. Install dependencies
+# 1. Clone the repo
+git clone <this-repo-url>
+cd my-app
+
+# 2. Install dependencies
 pnpm install
 
-# 2. Copy the environment template and fill in real values
+# 3. Copy the environment template and fill in real values
 cp .env.example .env.local
 # (defaults are usable as-is for local dev; only change them if you know why)
 
-# 3. Start PostgreSQL
+# 4. Start PostgreSQL
 docker compose --env-file .env.local up -d
 
-# 4. Apply database migrations
+# 5. Apply database migrations
 pnpm db:migrate
 
-# 5. Start the dev server
+# 6. Start the dev server
 pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). Check
 [http://localhost:3000/api/health](http://localhost:3000/api/health) to
 confirm the app can reach PostgreSQL.
+
+> **Accessing the dev server from another device** (e.g. testing on a
+> phone) works via the LAN address `next dev` prints on startup — but if
+> the browser silently upgrades that plain-HTTP address to HTTPS, it'll
+> fail (the dev server has no TLS cert); tell the browser to keep using
+> HTTP for it.
 
 ## Environment variables
 
@@ -111,10 +179,11 @@ connection string is configured in [`prisma.config.ts`](./prisma.config.ts)
 reads `DATABASE_URL` from `.env.local`.
 
 ```bash
-pnpm db:generate   # regenerate the Prisma Client (also runs on install)
-pnpm db:migrate    # create + apply a migration in development
-pnpm db:push       # push schema changes without a migration (prototyping only)
-pnpm db:studio     # open Prisma Studio (visual DB browser)
+pnpm db:generate        # regenerate the Prisma Client (also runs on install)
+pnpm db:migrate         # create + apply a migration in development
+pnpm db:migrate:deploy  # apply pending migrations in CI/production (non-interactive)
+pnpm db:push            # push schema changes without a migration (prototyping only)
+pnpm db:studio          # open Prisma Studio (visual DB browser)
 ```
 
 The Prisma Client is a singleton in [`server/db.ts`](./server/db.ts),
@@ -223,6 +292,44 @@ pnpm test:e2e:ui      # Playwright with its interactive UI
 to `main` and every pull request: install → lint → typecheck → unit tests →
 build. It does not run e2e tests, deploy, or need a live database (see the
 workflow file for why `next build` doesn't need one).
+
+## Deployment
+
+Not deployed anywhere yet — this section documents the steps; it doesn't
+require picking a specific host to be useful as a reference.
+
+1. **App host** — any Node.js host that runs Next.js works. **Vercel** is
+   the reference host for Next.js and needs the least configuration (it
+   detects `pnpm-lock.yaml` and runs `pnpm install && pnpm build`
+   automatically). Alternatives: Railway, Render, Fly.io, or a VPS.
+2. **Database** — PostgreSQL needs to be reachable from wherever the app
+   runs, so it can't stay in local Docker. Use a managed provider instead:
+   [Neon](https://neon.tech) or [Supabase](https://supabase.com) (both have
+   a free tier and work well with Prisma), or your host's own managed
+   Postgres (e.g. Railway Postgres).
+3. **Environment variables** — set these in the host's dashboard (never
+   commit them; `.env.local` never leaves your machine):
+   | Variable             | Production value                                                                                                                                                                              |
+   | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `DATABASE_URL`       | Connection string from your managed Postgres provider                                                                                                                                         |
+   | `BETTER_AUTH_SECRET` | A **fresh** secret — don't reuse the local dev one (`openssl rand -base64 32`, or `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` if `openssl` isn't available) |
+   | `BETTER_AUTH_URL`    | The production URL, e.g. `https://your-domain.com`                                                                                                                                            |
+4. **Migrations** — apply the committed migrations to the production
+   database (most hosts let you run this as a one-off/build-step command;
+   do it **before** traffic hits the new deployment):
+   ```bash
+   DATABASE_URL="<production connection string>" pnpm db:migrate:deploy
+   ```
+   Use `db:migrate:deploy` (`prisma migrate deploy`), not `db:migrate`
+   (`prisma migrate dev`) — the latter is interactive and meant for local
+   development only.
+5. **Build** — `next build` runs `server/env.ts`'s Zod validation at import
+   time, so all three variables above must be set (even just placeholder-
+   shaped) wherever the build itself runs, matching the pattern already used
+   in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml).
+
+`demo/` (the source resume/CV PDFs) is gitignored and never leaves your
+machine, so there's nothing sensitive to worry about in the deployed build.
 
 ## Security notes
 
